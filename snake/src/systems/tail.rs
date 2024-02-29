@@ -16,10 +16,9 @@ pub fn tail_movement(mut set: ParamSet<(Query<&mut Transform>, Query<&mut Transf
     }
     if check == true {
         let mut prev = *set.p0().get(snake_parts.0[0]).unwrap();
-        for (i, p) in snake_parts.0.iter().enumerate().skip(1) {
+        for (_i, p) in snake_parts.0.iter().enumerate().skip(1) {
         let mut p0 = set.p0();
         let mut part = p0.get_mut(*p).unwrap();
-        println!("{} {:?} {:?}", i, prev.translation, part.translation);
         let prev_value = *part;
             part.translation.y = prev.translation.y;
             part.translation.x = prev.translation.x;

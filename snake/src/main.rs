@@ -2,6 +2,7 @@
 
 #[cfg(feature = "debug")]
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy_embedded_assets::EmbeddedAssetPlugin;
 use bevy::{
     prelude::*, time::common_conditions::on_timer,
 };
@@ -13,7 +14,7 @@ use systems::components::Direction;
 fn main() {
     let mut binding = App::new();
     let app = binding
-        .add_plugins(DefaultPlugins)
+        .add_plugins((EmbeddedAssetPlugin::default(),DefaultPlugins))
         .insert_resource(SnakeParts::default())
         .insert_resource(ClearColor(Color::DARK_GREEN))
         .init_state::<Direction>()
