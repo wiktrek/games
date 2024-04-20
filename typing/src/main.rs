@@ -54,6 +54,7 @@ fn check_text(mut commands: Commands, keyboard: Res<ButtonInput<KeyCode>>, mut q
     }
     fn check_shift(text_to_add: &str, shift: bool, text: &mut TextValue) {
         if shift {
+            // fix: handle cases like numbers etc...
             text.input += &text_to_add.to_uppercase();
         } else {
             text.input += &text_to_add.to_lowercase();
