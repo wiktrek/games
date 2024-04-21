@@ -1,13 +1,18 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, time::Duration};
 
-use bevy::{input::keyboard::{Key, KeyboardInput}, prelude::*, utils::hashbrown::hash_map};
+use bevy::{prelude::*, time::common_conditions::on_timer};
 use rand::*;
 #[derive(Component)]
 struct TextComponent;
+#[derive(Component)]
+struct ResultComponent;
 #[derive(Component, Debug)]
 pub struct TextValue {
     pub value: String,
-    pub input: String
+    pub input: String,
+    pub started: bool,
+    pub time: f32,
+    pub result: i32,
 }
 fn main() {
     App::new()
@@ -15,7 +20,7 @@ fn main() {
         .add_systems(Startup, setup)
         .add_systems(
             Update,
-            check_text,
+            (add_text, check_text, timer.run_if(on_timer(Duration::from_millis(100))))
         )
         .run();
 }
@@ -35,7 +40,31 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                 .with_justify(text_justification),
             ..default()
         }, TextComponent)
-).insert(TextValue { input: String::new(), value: random_text});
+).insert(TextValue { input: String::new(), value: random_text, started: false, time: 0.0, result: 0});
+    commands.spawn( 
+        (Text2dBundle {
+        text: Text::from_section("nothing", text_style.clone()),
+        ..default()
+        }, ResultComponent)
+    );
+}
+fn timer(mut query: Query<&mut TextValue, With<TextComponent>>) {
+    let started = query.get_single().expect("Err getting TextValue").started;
+    let mut text = query.get_single_mut().expect("Err getting Time");
+    if started {
+        println!("Started!");
+        text.time = text.time + 0.1;
+        println!("{}", text.time)
+    } else {
+        if text.time != 0.0 {
+            let v = text.input.clone();
+            let result =  v.chars().collect::<Vec<char>>().len() as f32 / text.time;
+            text.result = result as i32 * 5;
+        }
+    }
+    if text.result != 0 {
+
+    }
 }
 fn get_random_text() -> String {
     let texts = [
@@ -46,18 +75,13 @@ fn get_random_text() -> String {
     let random =  rng.gen_range(0..texts.len() -1);
     return texts[random].to_string();
 }
-fn check_text(mut commands: Commands, keyboard: Res<ButtonInput<KeyCode>>, mut query: Query<(&mut TextValue ,&mut Transform), With<TextComponent>>) {    
+fn add_text(keyboard: Res<ButtonInput<KeyCode>>, mut query: Query<(&mut TextValue ,&mut Transform), With<TextComponent>>) {    
     let mut text = query.get_single_mut().unwrap().0;
     let shift = keyboard.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]);
-    // println!("{:?}", text);
-    // if keyboard.just_pressed(KeyCode::KeyA) {
-        
-    //     check_shift("a", shift, text.as_mut())
-    // }
     let hashmap = create_keycode_hashmap();
     let s = hashmap.iter().map(|(key, s)| {
         if keyboard.just_pressed(*key) {
-            println!("yay you pressed {}!", s);
+            text.started = true;
             s
         } else {
             "nothing"
@@ -71,6 +95,7 @@ fn check_text(mut commands: Commands, keyboard: Res<ButtonInput<KeyCode>>, mut q
     
     fn check_shift(text_to_add: &str, shift: bool, text: &mut TextValue) {
         match text_to_add {
+            "Stop" => return text.started = false,
             "Backspace" => return text.input = text.input.chars().collect::<Vec<char>>().pop().into_iter().collect::<String>(),
             "Space" => return text.input += " ",
             _ => {
@@ -87,6 +112,15 @@ fn check_text(mut commands: Commands, keyboard: Res<ButtonInput<KeyCode>>, mut q
         }
         println!("{}", text.input)
     }
+}
+fn check_text(mut commands: Commands, mut query: Query<&mut TextValue, With<TextComponent>>) {
+    let text_value = query.get_single().expect("Couldn't get text value");
+    let input = text_value.input.clone();
+    let text = text_value.value.clone();
+    if input == text {
+    println!("Perfect!")
+    }
+
 }
 fn create_keycode_hashmap() -> HashMap<KeyCode, &'static str> {
 let mut map = HashMap::default();
@@ -127,5 +161,6 @@ let mut map = HashMap::default();
     map.insert(KeyCode::Digit9, "9");
     map.insert(KeyCode::Backspace, "Backspace");
     map.insert(KeyCode::Space, "Space");
+    map.insert(KeyCode::Escape, "Stop");
     map
 }
