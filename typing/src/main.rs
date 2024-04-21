@@ -70,6 +70,12 @@ fn check_text(mut commands: Commands, keyboard: Res<ButtonInput<KeyCode>>, mut q
     }
     
     fn check_shift(text_to_add: &str, shift: bool, text: &mut TextValue) {
+        match text_to_add {
+            "Backspace" => return text.input = text.input.chars().collect::<Vec<char>>().pop().into_iter().collect::<String>(),
+            "Space" => return text.input += " ",
+            _ => {
+            }
+        }
         if shift {
             // fix: handle cases like numbers etc...
             match text_to_add {
@@ -119,5 +125,7 @@ let mut map = HashMap::default();
     map.insert(KeyCode::Digit7, "7");
     map.insert(KeyCode::Digit8, "8");
     map.insert(KeyCode::Digit9, "9");
+    map.insert(KeyCode::Backspace, "Backspace");
+    map.insert(KeyCode::Space, "Space");
     map
 }
