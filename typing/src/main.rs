@@ -44,32 +44,50 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn( 
         (Text2dBundle {
         text: Text::from_section("nothing", text_style.clone()),
+            transform: Transform {
+                translation: Vec3::new(0.0, -100.0, 0.0),
+                scale: Vec3::new(1.0, 1.0, 1.0),
+                ..default()
+            },
         ..default()
         }, ResultComponent)
     );
 }
-fn timer(mut query: Query<&mut TextValue, With<TextComponent>>) {
-    let started = query.get_single().expect("Err getting TextValue").started;
-    let mut text = query.get_single_mut().expect("Err getting Time");
+fn timer(mut param_set: ParamSet<(Query<(&mut TextValue, &mut Text), With<TextComponent>>,Query<&mut Text, With<ResultComponent>>)>) {
+    let mut query = param_set.p0();
+    let started = query.get_single().expect("Err getting TextValue").0.started;
+    let mut text = query.get_single_mut().expect("Err getting Time").0;
     if started {
-        println!("Started!");
         text.time = text.time + 0.1;
-        println!("{}", text.time)
+        // println!("{}", text.time)
     } else {
         if text.time != 0.0 {
             let v = text.input.clone();
             let result =  v.chars().collect::<Vec<char>>().len() as f32 / text.time;
-            text.result = result as i32 * 5;
+            text.result = (result * 5.0) as i32;
         }
     }
     if text.result != 0 {
-
+        param_set.p1().get_single_mut().expect("Err").sections[0].value = format!("{}", text.result);
+        reset(param_set.p0());
     }
+}
+fn reset(mut query: Query<(&mut TextValue, &mut Text), With<TextComponent>>) {
+    let mut q = query.get_single_mut().expect("err").0;
+    let random = get_random_text();
+    q.input = String::new();
+    q.started = false;
+    q.time = 0.0;
+    q.result = 0;
+    q.value = random.clone();
+    query.get_single_mut().expect("Err").1.sections[0].value = random;
 }
 fn get_random_text() -> String {
     let texts = [
         "Insert random quote here",
         "Another random quote",
+        "Random text...",
+        "You, 1 seconds ago"
     ];
     let mut rng = rand::thread_rng();
     let random =  rng.gen_range(0..texts.len() -1);
@@ -80,9 +98,17 @@ fn add_text(keyboard: Res<ButtonInput<KeyCode>>, mut query: Query<(&mut TextValu
     let shift = keyboard.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]);
     let hashmap = create_keycode_hashmap();
     let s = hashmap.iter().map(|(key, s)| {
+        if *key == KeyCode::Backspace {
+            if keyboard.pressed(*key) {
+                text.started = true;
+            return *s
+            } else {
+            return "nothing"
+            }
+        }
         if keyboard.just_pressed(*key) {
             text.started = true;
-            s
+            *s
         } else {
             "nothing"
         }
@@ -94,9 +120,14 @@ fn add_text(keyboard: Res<ButtonInput<KeyCode>>, mut query: Query<(&mut TextValu
     }
     
     fn check_shift(text_to_add: &str, shift: bool, text: &mut TextValue) {
+
         match text_to_add {
             "Stop" => return text.started = false,
-            "Backspace" => return text.input = text.input.chars().collect::<Vec<char>>().pop().into_iter().collect::<String>(),
+            "Backspace" => return {
+                let mut arr = text.input.chars().collect::<Vec<char>>();
+                arr.pop();
+                text.input = arr.into_iter().collect::<String>(); 
+            },
             "Space" => return text.input += " ",
             _ => {
             }
@@ -113,12 +144,16 @@ fn add_text(keyboard: Res<ButtonInput<KeyCode>>, mut query: Query<(&mut TextValu
         println!("{}", text.input)
     }
 }
-fn check_text(mut commands: Commands, mut query: Query<&mut TextValue, With<TextComponent>>) {
+fn check_text(mut query: Query<&mut TextValue, With<TextComponent>>) {
     let text_value = query.get_single().expect("Couldn't get text value");
     let input = text_value.input.clone();
     let text = text_value.value.clone();
     if input == text {
-    println!("Perfect!")
+    println!("Perfect!");
+    let mut get_mut = query.get_single_mut().expect("Error");
+    get_mut.started = false;
+    } else {
+        println!("{} {}", text, input)
     }
 
 }
@@ -159,6 +194,7 @@ let mut map = HashMap::default();
     map.insert(KeyCode::Digit7, "7");
     map.insert(KeyCode::Digit8, "8");
     map.insert(KeyCode::Digit9, "9");
+    map.insert(KeyCode::Period, ".");
     map.insert(KeyCode::Backspace, "Backspace");
     map.insert(KeyCode::Space, "Space");
     map.insert(KeyCode::Escape, "Stop");
