@@ -1,3 +1,8 @@
+/*
+    1.split films into groups of 2
+    2.make a select menu for each person
+    3. make last select manu for films that were selected the most amount of times
+*/
 use dialoguer::{theme::ColorfulTheme, FuzzySelect, Input};
 fn main() {
     let film = get_film();
