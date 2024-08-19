@@ -1,5 +1,6 @@
 /*
     I will fix pipes later
+    
 */
 use bevy::prelude::*;
 use bevy_embedded_assets::EmbeddedAssetPlugin;
@@ -20,7 +21,7 @@ fn main() {
     App::new()
         .add_plugins((DefaultPlugins, EmbeddedAssetPlugin::default()))
         .add_systems(Startup, (setup, spawn_bird))
-        .add_systems(Update, (bird_gravity, jump, update_score, move_pipes, pipe_bind))
+        .add_systems(Update, (bird_gravity, update_score, move_pipes, get_bind))
         .run();
 }
 
@@ -65,12 +66,14 @@ fn setup(
         .insert(ScoreText);
 }
 fn restart(mut commands: Commands) {
-    spawn_bird(commands);
+    spawn_pipes(commands)
+    // let bird = commands.get_entity(Bird);
+    // let score = bird.get_single().unwrap().value;
 }
 fn spawn_bird(mut commands: Commands) {
     commands.spawn((SpriteBundle {
         sprite: Sprite {
-            color: Color::GREEN,
+            color: Color::srgb(0., 255., 0.),
             custom_size: Some(Vec2::new(BIRD_SIZE, BIRD_SIZE)),
             ..default()
         },
@@ -92,20 +95,23 @@ fn bird_gravity(time: Res<Time>, mut birds: Query<&mut Transform, With<Bird>>) {
             
     }
 }
-fn jump(keyboard: Res<ButtonInput<KeyCode>>, mut bird: Query<&mut Transform, With<Bird>>) {
+fn get_bind(keyboard: Res<ButtonInput<KeyCode>>, mut bird: Query<&mut Transform, With<Bird>>, commands: Commands) {
+    // jump
     if keyboard.just_released(KeyCode::Space) {
         let mut mut_bird = bird.get_single_mut().unwrap();
         if mut_bird.translation.y < 240. {
             println!("{}", mut_bird.translation.y);
             mut_bird.translation.y += 90.;
         }
+        return
     }
-}
-
-fn pipe_bind(keyboard: Res<ButtonInput<KeyCode>>, commands: Commands) {
+    // spawn pipe bind
     if keyboard.just_released(KeyCode::KeyK) {
-        spawn_pipes(commands)
+        return spawn_pipes(commands)
     };
+    if keyboard.just_released(KeyCode::KeyR) {
+        return restart(commands)
+    }
 }
 fn update_score(bird: Query<&mut Score, With<Bird>>, mut score_text: Query<&mut Text, With<ScoreText>>) {
     for mut text in score_text.iter_mut() {
@@ -122,7 +128,7 @@ fn spawn_pipes(mut commands: Commands) {
     // down pipe
     commands.spawn((SpriteBundle {
         sprite: Sprite {
-            color: Color::RED,
+            color: Color::srgba(255., 50., 50., 1.),
             custom_size: Some(Vec2::new(x,y)),
             ..default()
         },
@@ -136,7 +142,7 @@ fn spawn_pipes(mut commands: Commands) {
     println!("{} {}", x, 440. - y);
     commands.spawn((SpriteBundle {
         sprite: Sprite {
-            color: Color::RED,
+            color: Color::srgba(255., 50., 50., 1.),
             custom_size: Some(Vec2::new(x,y)),
             ..default()
         },
