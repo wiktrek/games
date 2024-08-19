@@ -1,27 +1,15 @@
-/*
-    I will fix pipes later
-    
-*/
-use bevy::prelude::*;
+use bevy::{prelude::*, time::common_conditions::on_timer};
 use bevy_embedded_assets::EmbeddedAssetPlugin;
 use rand::prelude::*;
-#[derive(Component)]
-struct Bird;
-
-#[derive(Component)]
-struct ScoreText;
-#[derive(Component)]
-struct Pipe;
-#[derive(Component)]
-struct Score {
-    value: i32
-}
+use std::time::Duration;
+mod functions;
+use functions::*;
 const BIRD_SIZE: f32 = 90.;
 fn main() {
     App::new()
         .add_plugins((DefaultPlugins, EmbeddedAssetPlugin::default()))
         .add_systems(Startup, (setup, spawn_bird))
-        .add_systems(Update, (bird_gravity, update_score, move_pipes, get_bind))
+        .add_systems(Update, (bird_gravity, update_score, move_pipes, get_bind, spawn_pipes.run_if(on_timer(Duration::from_secs(3))), get_window.run_if(on_timer(Duration::from_millis(100))),))
         .run();
 }
 
@@ -65,11 +53,6 @@ fn setup(
         })
         .insert(ScoreText);
 }
-fn restart(mut commands: Commands) {
-    spawn_pipes(commands)
-    // let bird = commands.get_entity(Bird);
-    // let score = bird.get_single().unwrap().value;
-}
 fn spawn_bird(mut commands: Commands) {
     commands.spawn((SpriteBundle {
         sprite: Sprite {
@@ -82,18 +65,16 @@ fn spawn_bird(mut commands: Commands) {
             ..Default::default()
         },
      ..default()
-    }, (Bird, Score { value: 0})));
-    spawn_pipes(commands)
+    }, (Bird, Score { value: 0}, WindowSize { x: 1280., y: 720.})));
 }
-fn bird_gravity(time: Res<Time>, mut birds: Query<&mut Transform, With<Bird>>) {
-    for mut bird in birds.iter_mut() {
-            if bird.translation.y <= -(230. + BIRD_SIZE)  {
-                // lost function()
-                bird.translation.y = 0.;
-            }
-            bird.translation.y -= 200. * time.delta_seconds();
-            
+fn bird_gravity(time: Res<Time>, mut birds: Query<(&mut Transform, &mut WindowSize), With<Bird>>) {
+    let mut bird = birds.get_single_mut().unwrap();
+    if bird.0.translation.y <= -(bird.1.y / 2. - BIRD_SIZE / 2.) { 
+        // (230. + BIRD_SIZE)
+        // lost function()
+        bird.0.translation.y = 0.;
     }
+    bird.0.translation.y -= 200. * time.delta_seconds();
 }
 fn get_bind(keyboard: Res<ButtonInput<KeyCode>>, mut bird: Query<&mut Transform, With<Bird>>, commands: Commands) {
     // jump
@@ -105,13 +86,6 @@ fn get_bind(keyboard: Res<ButtonInput<KeyCode>>, mut bird: Query<&mut Transform,
         }
         return
     }
-    // spawn pipe bind
-    if keyboard.just_released(KeyCode::KeyK) {
-        return spawn_pipes(commands)
-    };
-    if keyboard.just_released(KeyCode::KeyR) {
-        return restart(commands)
-    }
 }
 fn update_score(bird: Query<&mut Score, With<Bird>>, mut score_text: Query<&mut Text, With<ScoreText>>) {
     for mut text in score_text.iter_mut() {
@@ -119,39 +93,51 @@ fn update_score(bird: Query<&mut Score, With<Bird>>, mut score_text: Query<&mut 
         text.sections[1].value = format!("{}", score);
     }
 }
-fn spawn_pipes(mut commands: Commands) {
-    let pipe_sizes_y: Vec<i32> = vec![100, 200, 300, 400, 500, 600];
-    let pipe_sizes_x: Vec<i32> = vec![100, 200, 250];
-    let mut rng = rand::thread_rng();
-    let x = pipe_sizes_x[rng.gen_range(0..pipe_sizes_x.len())] as f32;
-    let y = pipe_sizes_y[rng.gen_range(0..pipe_sizes_y.len())] as f32;
-    // down pipe
-    commands.spawn((SpriteBundle {
-        sprite: Sprite {
-            color: Color::srgba(255., 50., 50., 1.),
-            custom_size: Some(Vec2::new(x,y)),
+fn spawn_pipes(mut commands: Commands, window_size: Query<&mut WindowSize, With<Bird>>) {
+    let x = window_size.get_single().unwrap().x;
+    let y = window_size.get_single().unwrap().y;
+    random(commands,Vec2 { x , y});
+    fn random(mut commands: Commands, window_size: Vec2) {
+        // get random y
+        fn y() -> f32{
+            let mut rng = rand::thread_rng();
+            let pipe_sizes_y: Vec<i32> = vec![100, 200, 300, 400, 500, 600];
+            let y = pipe_sizes_y[rng.gen_range(0..pipe_sizes_y.len())] as f32;
+            y
+        }
+        let x = 200.;
+        let y1 = y();
+        let y2 = y();
+        if y1 + y2 + 140. > window_size.y {
+          return random(commands, window_size)
+        }
+        // down
+        commands.spawn((SpriteBundle {
+            sprite: Sprite {
+                color: Color::srgba(255., 50., 50., 1.),
+                custom_size: Some(Vec2::new(x, y1)),
+                ..default()
+            },
+            transform: Transform {
+                translation: Vec3::new(300., -(window_size.y / 2.) + y1 /  2., 0.),
+                ..Default::default()
+            },
             ..default()
-        },
-        transform: Transform {
-            translation: Vec3::new(300., -440. + y, 0.),
-            ..Default::default()
-        },
-     ..default()
-    }, Pipe));
-    // up pipe
-    println!("{} {}", x, 440. - y);
-    commands.spawn((SpriteBundle {
-        sprite: Sprite {
-            color: Color::srgba(255., 50., 50., 1.),
-            custom_size: Some(Vec2::new(x,y)),
+        }, Pipe));
+        // up
+        commands.spawn((SpriteBundle {
+            sprite: Sprite {
+                color: Color::srgba(255., 50., 50., 1.),
+                custom_size: Some(Vec2::new(x, y2)),
+                ..default()
+            },
+            transform: Transform {
+                translation: Vec3::new(300., (window_size.y / 2.) - y2 /  2., 0.),
+                ..Default::default()
+            },
             ..default()
-        },
-        transform: Transform {
-            translation: Vec3::new(300., 440. - y / 2., 0.),
-            ..Default::default()
-        },
-     ..default()
-    }, Pipe));
+        }, Pipe));
+    }
 }
 fn move_pipes(time: Res<Time>, mut pipes: Query<&mut Transform, With<Pipe>>) {
     for mut pipe in pipes.iter_mut() {
