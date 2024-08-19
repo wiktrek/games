@@ -15,3 +15,5 @@ pub struct WindowSize {
     pub x: f32, 
     pub y: f32
 }
+// Constants
+pub const BIRD_SIZE: f32 = 90.;
