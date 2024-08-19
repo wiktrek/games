@@ -1,4 +1,7 @@
-use bevy::{prelude::*, render::render_resource::encase::internal::SizeValue};
+/*
+    I will fix pipes later
+*/
+use bevy::prelude::*;
 use bevy_embedded_assets::EmbeddedAssetPlugin;
 use rand::prelude::*;
 #[derive(Component)]
@@ -7,7 +10,7 @@ struct Bird;
 #[derive(Component)]
 struct ScoreText;
 #[derive(Component)]
-struct Tube;
+struct Pipe;
 #[derive(Component)]
 struct Score {
     value: i32
@@ -16,8 +19,8 @@ const BIRD_SIZE: f32 = 90.;
 fn main() {
     App::new()
         .add_plugins((DefaultPlugins, EmbeddedAssetPlugin::default()))
-        .add_systems(Startup, (setup, spawn_bird, spawn_tubes))
-        .add_systems(Update, (bird_gravity, jump, update_score, move_tubes))
+        .add_systems(Startup, (setup, spawn_bird))
+        .add_systems(Update, (bird_gravity, jump, update_score, move_pipes, pipe_bind))
         .run();
 }
 
@@ -61,6 +64,9 @@ fn setup(
         })
         .insert(ScoreText);
 }
+fn restart(mut commands: Commands) {
+    spawn_bird(commands);
+}
 fn spawn_bird(mut commands: Commands) {
     commands.spawn((SpriteBundle {
         sprite: Sprite {
@@ -74,6 +80,7 @@ fn spawn_bird(mut commands: Commands) {
         },
      ..default()
     }, (Bird, Score { value: 0})));
+    spawn_pipes(commands)
 }
 fn bird_gravity(time: Res<Time>, mut birds: Query<&mut Transform, With<Bird>>) {
     for mut bird in birds.iter_mut() {
@@ -81,14 +88,24 @@ fn bird_gravity(time: Res<Time>, mut birds: Query<&mut Transform, With<Bird>>) {
                 // lost function()
                 bird.translation.y = 0.;
             }
-            bird.translation.y -= 100. * time.delta_seconds();
+            bird.translation.y -= 200. * time.delta_seconds();
             
     }
 }
 fn jump(keyboard: Res<ButtonInput<KeyCode>>, mut bird: Query<&mut Transform, With<Bird>>) {
     if keyboard.just_released(KeyCode::Space) {
-        bird.get_single_mut().unwrap().translation.y += 180.;
+        let mut mut_bird = bird.get_single_mut().unwrap();
+        if mut_bird.translation.y < 240. {
+            println!("{}", mut_bird.translation.y);
+            mut_bird.translation.y += 90.;
+        }
     }
+}
+
+fn pipe_bind(keyboard: Res<ButtonInput<KeyCode>>, commands: Commands) {
+    if keyboard.just_released(KeyCode::KeyK) {
+        spawn_pipes(commands)
+    };
 }
 fn update_score(bird: Query<&mut Score, With<Bird>>, mut score_text: Query<&mut Text, With<ScoreText>>) {
     for mut text in score_text.iter_mut() {
@@ -96,13 +113,13 @@ fn update_score(bird: Query<&mut Score, With<Bird>>, mut score_text: Query<&mut 
         text.sections[1].value = format!("{}", score);
     }
 }
-fn spawn_tubes(mut commands: Commands) {
-    let tube_sizes_y: Vec<i32> = vec![100, 200, 300];
-    let tube_sizes_x: Vec<i32> = vec![300, 200];
+fn spawn_pipes(mut commands: Commands) {
+    let pipe_sizes_y: Vec<i32> = vec![100, 200, 300, 400, 500, 600];
+    let pipe_sizes_x: Vec<i32> = vec![100, 200, 250];
     let mut rng = rand::thread_rng();
-    let x = tube_sizes_x[rng.gen_range(0..tube_sizes_x.len())] as f32;
-    let y = tube_sizes_y[rng.gen_range(0..tube_sizes_y.len())] as f32;
-
+    let x = pipe_sizes_x[rng.gen_range(0..pipe_sizes_x.len())] as f32;
+    let y = pipe_sizes_y[rng.gen_range(0..pipe_sizes_y.len())] as f32;
+    // down pipe
     commands.spawn((SpriteBundle {
         sprite: Sprite {
             color: Color::RED,
@@ -110,16 +127,30 @@ fn spawn_tubes(mut commands: Commands) {
             ..default()
         },
         transform: Transform {
-            translation: Vec3::new(300., -290., 0.),
+            translation: Vec3::new(300., -440. + y, 0.),
             ..Default::default()
         },
      ..default()
-    }, Tube));
+    }, Pipe));
+    // up pipe
+    println!("{} {}", x, 440. - y);
+    commands.spawn((SpriteBundle {
+        sprite: Sprite {
+            color: Color::RED,
+            custom_size: Some(Vec2::new(x,y)),
+            ..default()
+        },
+        transform: Transform {
+            translation: Vec3::new(300., 440. - y / 2., 0.),
+            ..Default::default()
+        },
+     ..default()
+    }, Pipe));
 }
-fn move_tubes(time: Res<Time>, mut tubes: Query<&mut Transform, With<Tube>>) {
-    for mut tube in tubes.iter_mut() {
-        tube.translation.x -= 50. * time.delta_seconds()
+fn move_pipes(time: Res<Time>, mut pipes: Query<&mut Transform, With<Pipe>>) {
+    for mut pipe in pipes.iter_mut() {
+        pipe.translation.x -= 170. * time.delta_seconds()
     }
 }
-fn bird_touch(tubes: Query<(&mut Transform, Sprite), With<Tube>>, bird: Query<&mut Transform, With<Bird>>) {
+fn bird_touch(pipes: Query<(&mut Transform, Entity), With<Pipe>>, bird: Query<&mut Transform, With<Bird>>) {
 }
