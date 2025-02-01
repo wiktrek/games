@@ -19,8 +19,8 @@ pub fn jump(keyboard: Res<ButtonInput<KeyCode>>, mut bird: Query<&mut Transform,
         return
     }
 }
-pub fn bird_touch(pipes: Query<(&mut Transform, Entity), With<Pipe>>, bird: Query<&mut Transform, With<Bird>>) {
-}
+// pub fn bird_touch(pipes: Query<(&mut Transform, Entity), With<Pipe>>, bird: Query<&mut Transform, With<Bird>>) {
+// }
 pub fn spawn_bird(mut commands: Commands) {
     commands.spawn((SpriteBundle {
         sprite: Sprite {

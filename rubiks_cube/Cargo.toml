@@ -1,0 +1,9 @@
+[package]
+name = "rubiks_cube"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bevy = { version = "0.15", features = ["bevy_sprite"] }
+bevy_embedded_assets = "0.12"
+bevy-inspector-egui = { version = "0.29" }
