@@ -38,21 +38,21 @@ fn create_rubiks_cube(
 ) {
     for i in 0..53 {
         let (x,y,z) = get_xyz(i);
-        let mut color: Color;
+        let mut color: (Color, Side_Color);
         match i {
-            0..=8 => color = Color::from(basic::YELLOW),
-            9..=17 => color = Color::Srgba(Srgba {red:255.0, blue:148.0, green:112.0,alpha:1.0}),
-            18..=26 => color = Color::from(basic::WHITE),
-            27..=35 => color = Color::from(basic::RED),
-            36..=44 => color = Color::from(basic::GREEN),
-            45..=53 => color = Color::from(basic::BLUE),
+            0..=8 => color = (Color::from(basic::YELLOW), Side_Color::Yellow),
+            9..=17 => color = (Color::Srgba(Srgba {red:255.0, blue:148.0, green:112.0,alpha:1.0}), Side_Color::Orange),
+            18..=26 => color = (Color::from(basic::WHITE), Side_Color::White),
+            27..=35 => color = (Color::from(basic::RED), Side_Color::Red),
+            36..=44 => color = (Color::from(basic::GREEN), Side_Color::Green),
+            45..=53 => color = (Color::from(basic::BLUE), Side_Color::Blue),
             _ => return
         }
         let a = commands.spawn((
             Mesh2d(meshes.add(Rectangle::default())),
-            MeshMaterial2d(materials.add(color)),
+            MeshMaterial2d(materials.add(color.0)),
             Transform::from_xyz(x, y, z).with_scale(Vec3::splat(64.))
-        )).insert(Side{ color: Side_Color::Red, num: i as i32}).id();
+        )).insert(Side{ color: color.1, num: i as i32}).id();
     }
 }
 fn get_xyz(i: i32) -> (f32,f32,f32) {
