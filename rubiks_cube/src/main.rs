@@ -38,63 +38,22 @@ fn create_rubiks_cube(
 ) {
     for i in 0..53 {
         let (x,y,z) = get_xyz(i);
+        let mut color: Color;
         match i {
-            0..=8 => {
-                let a = commands.spawn((
-                    Mesh2d(meshes.add(Rectangle::default())),
-                    MeshMaterial2d(materials.add(Color::from(basic::YELLOW))),
-                    Transform::from_xyz(
-                        x*64.0,y*64.0,z*64.0
-                    ).with_scale(Vec3::splat(64.))
-                )).insert(Side{ color: Side_Color::Red, num: i as i32}).id();
-            },
-            9..=17 => {
-                let a = commands.spawn((
-                    Mesh2d(meshes.add(Rectangle::default())),
-                    MeshMaterial2d(materials.add(Color::from(basic::GREEN))),
-                    Transform::from_xyz(
-                        0.0, 0.0, 0.0
-                    ).with_scale(Vec3::splat(64.))
-                )).insert(Side{ color: Side_Color::Green, num: i as i32}).id();
-            },
-            18..=26 => {
-                let a = commands.spawn((
-                    Mesh2d(meshes.add(Rectangle::default())),
-                    MeshMaterial2d(materials.add(Color::from(basic::YELLOW))),
-                    Transform::from_xyz(
-                        0.0, 0.0, 0.0
-                    ).with_scale(Vec3::splat(64.))
-                )).insert(Side{ color: Side_Color::Yellow, num: i as i32}).id();
-            },
-            27..=35 => {
-                let a = commands.spawn((
-                    Mesh2d(meshes.add(Rectangle::default())),
-                    MeshMaterial2d(materials.add(Color::Srgba(Srgba {red:255.0, blue:148.0, green:112.0,alpha:1.0}))),
-                    Transform::from_xyz(
-                        0.0, 0.0, 0.0
-                    ).with_scale(Vec3::splat(64.))
-                )).insert(Side{ color: Side_Color::Orange, num: i as i32}).id();
-            },
-            36..=44 => {
-                let a = commands.spawn((
-                    Mesh2d(meshes.add(Rectangle::default())),
-                    MeshMaterial2d(materials.add(Color::from(basic::WHITE))),
-                    Transform::from_xyz(
-                        0.0, 0.0, 0.0
-                    ).with_scale(Vec3::splat(64.))
-                )).insert(Side{ color: Side_Color::White, num: i as i32}).id();
+            0..=8 => color = Color::from(basic::YELLOW),
+            9..=17 => color = Color::Srgba(Srgba {red:255.0, blue:148.0, green:112.0,alpha:1.0}),
+            18..=26 => color = Color::from(basic::WHITE),
+            27..=35 => color = Color::from(basic::RED),
+            36..=44 => color = Color::from(basic::GREEN),
+            45..=53 => color = Color::from(basic::BLUE),
+            _ => return
         }
-        45..=53 => {
-            let a = commands.spawn((
-                Mesh2d(meshes.add(Rectangle::default())),
-                MeshMaterial2d(materials.add(Color::from(basic::WHITE))),
-                Transform::from_xyz(
-                    0.0, 0.0, 0.0
-                ).with_scale(Vec3::splat(64.))
-            )).insert(Side{ color: Side_Color::White, num: i as i32}).id();
-        }
-        _ => return
-    }}
+        let a = commands.spawn((
+            Mesh2d(meshes.add(Rectangle::default())),
+            MeshMaterial2d(materials.add(color)),
+            Transform::from_xyz(x, y, z).with_scale(Vec3::splat(64.))
+        )).insert(Side{ color: Side_Color::Red, num: i as i32}).id();
+    }
 }
 fn get_xyz(i: i32) -> (f32,f32,f32) {
     let mut x: f32 = 0.0;
